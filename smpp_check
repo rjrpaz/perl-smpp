@@ -1,0 +1,41 @@
+#!/sbin/sh
+#
+# Fecha: 14/11/2002
+#
+# /export/home/cba/smpp_check - Chequea que los procesos de SMPP
+# esten corriendo.
+#
+
+PATH=/usr/bin:/bin:/export/home/cba
+
+# Chequea que este corriendo el proceso BelMonIn.pl
+pid=`/usr/bin/ps -e -o pid,comm,args | /usr/bin/grep BelMonIn.pl | /usr/bin/grep -v grep | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`
+if test -z "$pid"
+then
+#	echo "No esta corriendo BelMonIn.pl"
+	cd /export/home/cba
+	/export/home/cba/BelMonIn.pl >> /export/home/cba/BelMonIn.out 2>> /export/home/cba/BelMonIn.out &
+fi
+
+# Chequea que este corriendo el proceso capbelgrano
+pid=`/usr/bin/ps -e -o pid,comm,args | /usr/bin/grep capbelgrano | /usr/bin/grep -v grep | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`
+if test -z "$pid"
+then
+#	echo "No esta corriendo capbelgrano"
+	cd /export/home/cba
+	/export/home/cba/capbelgrano -b 9600 -l /tmp/capturador.log -d /dev/term/3 >> /export/home/cba/capbelgrano.out 2>> /export/home/cba/capbelgrano.out &
+fi
+
+# Chequea que esten corriendo los DOS procesos de BelMonOut.pl
+pid=`/usr/bin/ps -e -o pid,comm,args | /usr/bin/grep BelMonOut.pl | /usr/bin/grep perl | /usr/bin/grep -v grep | /usr/bin/wc -l`
+if [ "$pid" -ne "2" ]
+then
+#	echo "No esta corriendo BelMonOut.pl"
+	pid=`/usr/bin/ps -e -o pid,comm,args | /usr/bin/grep BelMonOut.pl | /usr/bin/grep perl| /usr/bin/grep -v grep | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`
+	if test "$pid"
+	then
+		/usr/bin/kill $pid
+	fi
+	cd /export/home/cba
+	/export/home/cba/BelMonOut.pl >> /export/home/cba/BelMonOut.out 2>> /export/home/cba/BelMonOut.out &
+fi

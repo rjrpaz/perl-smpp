@@ -1,0 +1,25 @@
+#!/sbin/sh
+#
+# Fecha: 20/11/2002
+#
+# /export/home/cba/cola_entrada - Chequea que no haya archivos pendientes
+# de ser enviados, por estar ocupado el kermit
+#
+
+PATH=/usr/bin:/bin:/export/home/cba
+
+# Trata de mandar cada archivo en cola (si lo hubiera).
+for i in `/bin/ls /export/home/cba/spool/*.in 2>/dev/null`
+do
+#	echo $i
+	# Chequea que no este corriendo el proceso enviar_kermit.pl
+	pid=`/usr/bin/ps -e -o pid,comm,args | /usr/bin/grep enviar_kermit.pl | /usr/bin/grep -v grep | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`
+	if test -z "$pid"
+	then
+#		echo "Enviando mensajes en cola"
+		/export/home/cba/enviar_kermit.pl $i
+	else
+#		echo "enviar_kermit.pl esta ejecutandose"
+		exit;
+	fi
+done

@@ -1,0 +1,51 @@
+#!/sbin/sh
+#
+# Fecha: 14/11/2002
+#
+# /etc/init.d/smpp_client - Arranca/Baja los procesos de SMPP
+#
+
+PATH=/usr/bin:/bin:/export/home/cba
+
+case $1 in 
+'start')
+	if [ -f /export/home/cba/BelMon.pm -a \
+		-f /export/home/cba/BelMonIn.pl -a \
+		-f /export/home/cba/BelMonOut.pl -a \
+		-f /export/home/cba/capbelgrano ]; then
+		echo "Arrancando recepcion de mensajes SMPP ..."
+		cd /export/home/cba
+		/export/home/cba/BelMonIn.pl >> /export/home/cba/BelMonIn.out 2>> /export/home/cba/BelMonIn.out &
+		echo "Arrancando envio de mensajes SMPP ..."
+		/export/home/cba/BelMonOut.pl >> /export/home/cba/BelMonOut.out 2>> /export/home/cba/BelMonOut.out &
+		/export/home/cba/capbelgrano -b 9600 -l /tmp/capturador.log -d /dev/term/3 >> /export/home/cba/capbelgrano.out 2>> /export/home/cba/capbelgrano.out &
+	else
+		 echo "Falta alguno de los archivos necesarios para establecer la sesion"	
+	fi	
+	;;
+'stop')
+	echo "Bajando recepcion de mensajes SMPP ..."
+	pid=`/usr/bin/ps -e -o pid,comm,args | /usr/bin/grep BelMonIn.pl | /usr/bin/grep -v grep | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`
+	echo "$pid"
+	if test "$pid"
+	then
+		kill $pid
+	fi
+	echo "Bajando envio de mensajes SMPP ..."
+	pid=`/usr/bin/ps -e -o pid,comm,args | /usr/bin/grep capbelgrano | /usr/bin/grep -v grep | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`
+	echo "$pid"
+	if test "$pid"
+	then
+		kill $pid
+	fi
+	pid=`/usr/bin/ps -e -o pid,comm,args | /usr/bin/grep BelMonOut.pl | /usr/bin/grep -v grep | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`
+	echo "$pid"
+	if test "$pid"
+	then
+		kill $pid
+	fi
+	;;
+*)
+	echo "forma de uso: /etc/init.d/smpp_client {start|stop}"
+	;;
+esac
